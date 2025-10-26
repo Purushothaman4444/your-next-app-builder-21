@@ -10,6 +10,9 @@ import Dashboard from "./pages/Dashboard";
 import MyResumes from "./pages/MyResumes";
 import ProfileSettings from "./pages/ProfileSettings";
 import Templates from "./pages/Templates";
+import ResumeBuilder from "./pages/ResumeBuilder";
+import ResumePreview from "./pages/ResumePreview";
+import ResumeExport from "./pages/ResumeExport";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -28,6 +31,9 @@ const App = () => (
           <Route path="/my-resumes" element={<MyResumes />} />
           <Route path="/profile" element={<ProfileSettings />} />
           <Route path="/templates" element={<Templates />} />
+          <Route path="/resume/create" element={<ResumeBuilder />} />
+          <Route path="/resume/preview" element={<ResumePreview />} />
+          <Route path="/resume/export" element={<ResumeExport />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>
