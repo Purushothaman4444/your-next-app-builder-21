@@ -1,1 +1,7 @@
 project_id = "kbpxpvxhbsweolohcwzw"
+
+[functions.ai-suggest-content]
+verify_jwt = false
+
+[functions.send-resume-email]
+verify_jwt = false
