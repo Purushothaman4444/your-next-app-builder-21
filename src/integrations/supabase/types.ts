@@ -14,6 +14,213 @@ export type Database = {
   }
   public: {
     Tables: {
+      certifications: {
+        Row: {
+          certificate_url: string | null
+          certification_name: string
+          created_at: string
+          credential_id: string | null
+          date_earned: string | null
+          display_order: number | null
+          expiration_date: string | null
+          id: string
+          is_verified: boolean | null
+          issuing_organization: string
+          resume_id: string
+          updated_at: string
+        }
+        Insert: {
+          certificate_url?: string | null
+          certification_name: string
+          created_at?: string
+          credential_id?: string | null
+          date_earned?: string | null
+          display_order?: number | null
+          expiration_date?: string | null
+          id?: string
+          is_verified?: boolean | null
+          issuing_organization: string
+          resume_id: string
+          updated_at?: string
+        }
+        Update: {
+          certificate_url?: string | null
+          certification_name?: string
+          created_at?: string
+          credential_id?: string | null
+          date_earned?: string | null
+          display_order?: number | null
+          expiration_date?: string | null
+          id?: string
+          is_verified?: boolean | null
+          issuing_organization?: string
+          resume_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "certifications_resume_id_fkey"
+            columns: ["resume_id"]
+            isOneToOne: false
+            referencedRelation: "resumes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      education: {
+        Row: {
+          created_at: string
+          degree: string
+          display_order: number | null
+          field_of_study: string | null
+          gpa: string | null
+          graduation_date: string | null
+          id: string
+          relevant_coursework: string | null
+          resume_id: string
+          school: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          degree: string
+          display_order?: number | null
+          field_of_study?: string | null
+          gpa?: string | null
+          graduation_date?: string | null
+          id?: string
+          relevant_coursework?: string | null
+          resume_id: string
+          school: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          degree?: string
+          display_order?: number | null
+          field_of_study?: string | null
+          gpa?: string | null
+          graduation_date?: string | null
+          id?: string
+          relevant_coursework?: string | null
+          resume_id?: string
+          school?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "education_resume_id_fkey"
+            columns: ["resume_id"]
+            isOneToOne: false
+            referencedRelation: "resumes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      file_uploads: {
+        Row: {
+          created_at: string
+          file_name: string
+          file_path: string
+          file_size: number | null
+          file_type: string
+          id: string
+          mime_type: string | null
+          resume_id: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          file_name: string
+          file_path: string
+          file_size?: number | null
+          file_type: string
+          id?: string
+          mime_type?: string | null
+          resume_id?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          file_name?: string
+          file_path?: string
+          file_size?: number | null
+          file_type?: string
+          id?: string
+          mime_type?: string | null
+          resume_id?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "file_uploads_resume_id_fkey"
+            columns: ["resume_id"]
+            isOneToOne: false
+            referencedRelation: "resumes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "file_uploads_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      personal_info: {
+        Row: {
+          address: string | null
+          created_at: string
+          email: string | null
+          first_name: string | null
+          id: string
+          last_name: string | null
+          linkedin_url: string | null
+          phone: string | null
+          photo_url: string | null
+          professional_summary: string | null
+          resume_id: string
+          updated_at: string
+        }
+        Insert: {
+          address?: string | null
+          created_at?: string
+          email?: string | null
+          first_name?: string | null
+          id?: string
+          last_name?: string | null
+          linkedin_url?: string | null
+          phone?: string | null
+          photo_url?: string | null
+          professional_summary?: string | null
+          resume_id: string
+          updated_at?: string
+        }
+        Update: {
+          address?: string | null
+          created_at?: string
+          email?: string | null
+          first_name?: string | null
+          id?: string
+          last_name?: string | null
+          linkedin_url?: string | null
+          phone?: string | null
+          photo_url?: string | null
+          professional_summary?: string | null
+          resume_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "personal_info_resume_id_fkey"
+            columns: ["resume_id"]
+            isOneToOne: true
+            referencedRelation: "resumes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profiles: {
         Row: {
           avatar_url: string | null
@@ -43,6 +250,194 @@ export type Database = {
           updated_at?: string
         }
         Relationships: []
+      }
+      projects: {
+        Row: {
+          created_at: string
+          description: string | null
+          display_order: number | null
+          duration: string | null
+          github_url: string | null
+          id: string
+          image_url: string | null
+          live_url: string | null
+          project_name: string
+          resume_id: string
+          role: string | null
+          technologies: string[] | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          display_order?: number | null
+          duration?: string | null
+          github_url?: string | null
+          id?: string
+          image_url?: string | null
+          live_url?: string | null
+          project_name: string
+          resume_id: string
+          role?: string | null
+          technologies?: string[] | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          display_order?: number | null
+          duration?: string | null
+          github_url?: string | null
+          id?: string
+          image_url?: string | null
+          live_url?: string | null
+          project_name?: string
+          resume_id?: string
+          role?: string | null
+          technologies?: string[] | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "projects_resume_id_fkey"
+            columns: ["resume_id"]
+            isOneToOne: false
+            referencedRelation: "resumes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      resumes: {
+        Row: {
+          created_at: string
+          id: string
+          last_accessed_at: string | null
+          template_id: string
+          title: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          last_accessed_at?: string | null
+          template_id?: string
+          title: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          last_accessed_at?: string | null
+          template_id?: string
+          title?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "resumes_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      skills: {
+        Row: {
+          category: string
+          created_at: string
+          display_order: number | null
+          id: string
+          proficiency_level: number | null
+          resume_id: string
+          skill_name: string
+          updated_at: string
+        }
+        Insert: {
+          category: string
+          created_at?: string
+          display_order?: number | null
+          id?: string
+          proficiency_level?: number | null
+          resume_id: string
+          skill_name: string
+          updated_at?: string
+        }
+        Update: {
+          category?: string
+          created_at?: string
+          display_order?: number | null
+          id?: string
+          proficiency_level?: number | null
+          resume_id?: string
+          skill_name?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "skills_resume_id_fkey"
+            columns: ["resume_id"]
+            isOneToOne: false
+            referencedRelation: "resumes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      work_experience: {
+        Row: {
+          company: string
+          created_at: string
+          description: string | null
+          display_order: number | null
+          end_date: string | null
+          id: string
+          is_current: boolean | null
+          job_title: string
+          location: string | null
+          resume_id: string
+          start_date: string | null
+          updated_at: string
+        }
+        Insert: {
+          company: string
+          created_at?: string
+          description?: string | null
+          display_order?: number | null
+          end_date?: string | null
+          id?: string
+          is_current?: boolean | null
+          job_title: string
+          location?: string | null
+          resume_id: string
+          start_date?: string | null
+          updated_at?: string
+        }
+        Update: {
+          company?: string
+          created_at?: string
+          description?: string | null
+          display_order?: number | null
+          end_date?: string | null
+          id?: string
+          is_current?: boolean | null
+          job_title?: string
+          location?: string | null
+          resume_id?: string
+          start_date?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "work_experience_resume_id_fkey"
+            columns: ["resume_id"]
+            isOneToOne: false
+            referencedRelation: "resumes"
+            referencedColumns: ["id"]
+          },
+        ]
       }
     }
     Views: {
