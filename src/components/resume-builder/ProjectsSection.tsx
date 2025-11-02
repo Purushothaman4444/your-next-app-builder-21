@@ -20,7 +20,11 @@ interface Project {
   imageUrl?: string;
 }
 
-export const ProjectsSection = () => {
+interface ProjectsSectionProps {
+  resumeId: string;
+}
+
+export const ProjectsSection = ({ resumeId }: ProjectsSectionProps) => {
   const [projects, setProjects] = useState<Project[]>([
     {
       id: "1",

@@ -14,7 +14,11 @@ interface Skill {
   level: number;
 }
 
-export const SkillsSection = () => {
+interface SkillsSectionProps {
+  resumeId: string;
+}
+
+export const SkillsSection = ({ resumeId }: SkillsSectionProps) => {
   const [technicalSkills, setTechnicalSkills] = useState<Skill[]>([]);
   const [softSkills, setSoftSkills] = useState<Skill[]>([]);
   const [languages, setLanguages] = useState<Skill[]>([]);

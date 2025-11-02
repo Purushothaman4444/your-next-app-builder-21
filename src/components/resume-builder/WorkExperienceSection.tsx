@@ -19,7 +19,11 @@ interface WorkExperience {
   description: string;
 }
 
-export const WorkExperienceSection = () => {
+interface WorkExperienceSectionProps {
+  resumeId: string;
+}
+
+export const WorkExperienceSection = ({ resumeId }: WorkExperienceSectionProps) => {
   const [experiences, setExperiences] = useState<WorkExperience[]>([
     {
       id: "1",

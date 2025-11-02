@@ -18,7 +18,11 @@ interface Certification {
   documentUrl?: string;
 }
 
-export const CertificationsSection = () => {
+interface CertificationsSectionProps {
+  resumeId: string;
+}
+
+export const CertificationsSection = ({ resumeId }: CertificationsSectionProps) => {
   const [certifications, setCertifications] = useState<Certification[]>([
     {
       id: "1",

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { MainLayout } from "@/components/layouts/MainLayout";
 import { ContentWrapper } from "@/components/layouts/ContentWrapper";
 import { Button } from "@/components/ui/button";
@@ -12,6 +12,8 @@ import { SkillsSection } from "@/components/resume-builder/SkillsSection";
 import { CertificationsSection } from "@/components/resume-builder/CertificationsSection";
 import { ProjectsSection } from "@/components/resume-builder/ProjectsSection";
 import { useToast } from "@/hooks/use-toast";
+import { useResumes } from "@/hooks/useResumes";
+import { LoadingSpinner } from "@/components/LoadingSpinner";
 
 const sections = [
   { id: "personal", title: "Personal Info", component: PersonalInfoSection },
@@ -26,23 +28,56 @@ const ResumeBuilder = () => {
   const [searchParams, setSearchParams] = useSearchParams();
   const navigate = useNavigate();
   const { toast } = useToast();
+  const { resumes, createResume, isCreating } = useResumes();
+  const [resumeId, setResumeId] = useState<string | null>(null);
+  
   const currentSection = searchParams.get("section") || "personal";
   const currentIndex = sections.findIndex((s) => s.id === currentSection);
   const CurrentComponent = sections[currentIndex]?.component;
 
   const progress = ((currentIndex + 1) / sections.length) * 100;
 
+  // Get or create resume
+  useEffect(() => {
+    const urlResumeId = searchParams.get("resumeId");
+    
+    if (urlResumeId) {
+      setResumeId(urlResumeId);
+    } else if (resumes && resumes.length > 0 && !isCreating) {
+      // Use the most recent resume
+      const latestResume = resumes[0];
+      setResumeId(latestResume.id);
+      setSearchParams({ section: currentSection, resumeId: latestResume.id });
+    } else if (resumes && resumes.length === 0 && !isCreating && !resumeId) {
+      // Create a new resume if none exists
+      createResume("My Resume");
+    }
+  }, [resumes, searchParams, isCreating, resumeId]);
+
+  // Update resumeId when a new resume is created
+  useEffect(() => {
+    if (resumes && resumes.length > 0 && !resumeId) {
+      const latestResume = resumes[0];
+      setResumeId(latestResume.id);
+      setSearchParams({ section: currentSection, resumeId: latestResume.id });
+    }
+  }, [resumes]);
+
   const handleNext = () => {
     if (currentIndex < sections.length - 1) {
-      setSearchParams({ section: sections[currentIndex + 1].id });
+      const params: any = { section: sections[currentIndex + 1].id };
+      if (resumeId) params.resumeId = resumeId;
+      setSearchParams(params);
     } else {
-      navigate("/resume/preview");
+      navigate(`/resume/preview${resumeId ? `?resumeId=${resumeId}` : ''}`);
     }
   };
 
   const handlePrevious = () => {
     if (currentIndex > 0) {
-      setSearchParams({ section: sections[currentIndex - 1].id });
+      const params: any = { section: sections[currentIndex - 1].id };
+      if (resumeId) params.resumeId = resumeId;
+      setSearchParams(params);
     }
   };
 
@@ -52,6 +87,18 @@ const ResumeBuilder = () => {
       description: "Your resume has been saved successfully.",
     });
   };
+
+  if (isCreating || !resumeId) {
+    return (
+      <MainLayout>
+        <ContentWrapper>
+          <div className="flex items-center justify-center min-h-[400px]">
+            <LoadingSpinner />
+          </div>
+        </ContentWrapper>
+      </MainLayout>
+    );
+  }
 
   return (
     <MainLayout>
@@ -84,7 +131,11 @@ const ResumeBuilder = () => {
                 key={section.id}
                 variant={currentSection === section.id ? "default" : "ghost"}
                 size="sm"
-                onClick={() => setSearchParams({ section: section.id })}
+                onClick={() => {
+                  const params: any = { section: section.id };
+                  if (resumeId) params.resumeId = resumeId;
+                  setSearchParams(params);
+                }}
                 className="flex-shrink-0"
               >
                 <span className="mr-2">{index + 1}.</span>
@@ -95,7 +146,7 @@ const ResumeBuilder = () => {
 
           {/* Current Section */}
           <div className="mb-8">
-            {CurrentComponent && <CurrentComponent />}
+            {CurrentComponent && <CurrentComponent resumeId={resumeId} />}
           </div>
 
           {/* Navigation Buttons */}

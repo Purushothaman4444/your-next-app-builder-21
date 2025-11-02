@@ -17,7 +17,11 @@ interface Education {
   coursework: string;
 }
 
-export const EducationSection = () => {
+interface EducationSectionProps {
+  resumeId: string;
+}
+
+export const EducationSection = ({ resumeId }: EducationSectionProps) => {
   const [educations, setEducations] = useState<Education[]>([
     {
       id: "1",
