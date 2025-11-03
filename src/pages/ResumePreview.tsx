@@ -6,17 +6,100 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Download, Share2, Edit, FileText } from "lucide-react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
+import { useResumeData } from "@/hooks/useResumeData";
+import { LoadingSpinner } from "@/components/LoadingSpinner";
+import { downloadResumeAsPDF } from "@/utils/pdfGenerator";
+import { useToast } from "@/hooks/use-toast";
 
 const ResumePreview = () => {
   const navigate = useNavigate();
+  const { toast } = useToast();
+  const [searchParams] = useSearchParams();
+  const resumeId = searchParams.get("resumeId");
   const [selectedTemplate, setSelectedTemplate] = useState("professional");
+
+  const { personalInfo, workExperience, education, skills, certifications, projects } = useResumeData(resumeId || "");
 
   const templates = [
     { id: "professional", name: "Professional" },
     { id: "modern", name: "Modern" },
     { id: "simple", name: "Simple" },
   ];
+
+  const handleExport = () => {
+    if (!personalInfo) {
+      toast({
+        title: "No Data",
+        description: "Please add your personal information first.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    const resumeData = {
+      personalInfo: {
+        firstName: personalInfo.first_name || "",
+        lastName: personalInfo.last_name || "",
+        email: personalInfo.email || "",
+        phone: personalInfo.phone || "",
+        address: personalInfo.address || "",
+        linkedinUrl: personalInfo.linkedin_url || "",
+        professionalSummary: personalInfo.professional_summary || "",
+        photoUrl: personalInfo.photo_url || "",
+      },
+      workExperience: workExperience?.map(exp => ({
+        jobTitle: exp.job_title,
+        company: exp.company,
+        location: exp.location || "",
+        startDate: exp.start_date || "",
+        endDate: exp.end_date || "",
+        isCurrent: exp.is_current || false,
+        description: exp.description || "",
+      })) || [],
+      education: education?.map(edu => ({
+        school: edu.school,
+        degree: edu.degree,
+        fieldOfStudy: edu.field_of_study || "",
+        graduationDate: edu.graduation_date || "",
+        gpa: edu.gpa || "",
+      })) || [],
+      skills: skills?.map(skill => ({
+        skillName: skill.skill_name,
+        category: skill.category,
+        proficiencyLevel: skill.proficiency_level || 50,
+      })) || [],
+      certifications: certifications?.map(cert => ({
+        certificationName: cert.certification_name,
+        issuingOrganization: cert.issuing_organization,
+        dateEarned: cert.date_earned || "",
+      })) || [],
+      projects: projects?.map(proj => ({
+        projectName: proj.project_name,
+        description: proj.description || "",
+        technologies: proj.technologies || [],
+        liveUrl: proj.live_url || "",
+        githubUrl: proj.github_url || "",
+      })) || [],
+    };
+
+    downloadResumeAsPDF(resumeData, selectedTemplate);
+  };
+
+  if (!resumeId) {
+    return (
+      <MainLayout>
+        <ContentWrapper>
+          <div className="flex flex-col items-center justify-center min-h-[400px]">
+            <p className="text-muted-foreground">No resume selected</p>
+            <Button onClick={() => navigate("/resume/create")} className="mt-4">
+              Create Resume
+            </Button>
+          </div>
+        </ContentWrapper>
+      </MainLayout>
+    );
+  }
 
   return (
     <MainLayout>
@@ -49,17 +132,13 @@ const ResumePreview = () => {
                 </div>
 
                 <div className="pt-4 border-t space-y-2">
-                  <Button variant="outline" className="w-full" onClick={() => navigate("/resume/create")}>
+                  <Button variant="outline" className="w-full" onClick={() => navigate(`/resume/create?resumeId=${resumeId}`)}>
                     <Edit className="h-4 w-4 mr-2" />
                     Edit Resume
                   </Button>
-                  <Button className="w-full" onClick={() => navigate("/resume/export")}>
+                  <Button className="w-full" onClick={handleExport}>
                     <Download className="h-4 w-4 mr-2" />
-                    Export Resume
-                  </Button>
-                  <Button variant="outline" className="w-full">
-                    <Share2 className="h-4 w-4 mr-2" />
-                    Share
+                    Download PDF
                   </Button>
                 </div>
               </CardContent>
@@ -77,83 +156,177 @@ const ResumePreview = () => {
                   </TabsList>
 
                   <TabsContent value="preview">
-                    <div className="bg-white text-foreground p-8 shadow-lg rounded-lg min-h-[1000px]">
-                      {/* Resume Preview */}
-                      <div className="space-y-6">
-                        {/* Header */}
-                        <div className="text-center border-b pb-6">
-                          <h1 className="text-4xl font-bold mb-2">John Doe</h1>
-                          <p className="text-muted-foreground">Software Engineer</p>
-                          <div className="flex justify-center gap-4 mt-2 text-sm text-muted-foreground">
-                            <span>john.doe@example.com</span>
-                            <span>•</span>
-                            <span>+1 (555) 123-4567</span>
-                            <span>•</span>
-                            <span>San Francisco, CA</span>
+                    {!personalInfo ? (
+                      <div className="flex items-center justify-center min-h-[400px]">
+                        <LoadingSpinner />
+                      </div>
+                    ) : (
+                      <div className="bg-white text-gray-900 p-8 shadow-lg rounded-lg min-h-[1000px]">
+                        {/* Resume Preview */}
+                        <div className="space-y-6">
+                          {/* Header */}
+                          <div className="text-center border-b border-gray-300 pb-6">
+                            <h1 className="text-4xl font-bold mb-2 text-gray-900">
+                              {personalInfo.first_name} {personalInfo.last_name}
+                            </h1>
+                            <div className="flex flex-wrap justify-center gap-4 mt-2 text-sm text-gray-600">
+                              {personalInfo.email && <span>{personalInfo.email}</span>}
+                              {personalInfo.phone && (
+                                <>
+                                  <span>•</span>
+                                  <span>{personalInfo.phone}</span>
+                                </>
+                              )}
+                              {personalInfo.address && (
+                                <>
+                                  <span>•</span>
+                                  <span>{personalInfo.address}</span>
+                                </>
+                              )}
+                            </div>
+                            {personalInfo.linkedin_url && (
+                              <div className="mt-2 text-sm text-blue-600">
+                                <a href={personalInfo.linkedin_url} target="_blank" rel="noopener noreferrer">
+                                  {personalInfo.linkedin_url}
+                                </a>
+                              </div>
+                            )}
                           </div>
-                        </div>
 
-                        {/* Summary */}
-                        <div>
-                          <h2 className="text-xl font-bold mb-3 text-primary">Professional Summary</h2>
-                          <p className="text-sm leading-relaxed">
-                            Experienced software engineer with a passion for building scalable web applications.
-                            Proficient in modern frameworks and technologies with a strong focus on user experience
-                            and code quality.
-                          </p>
-                        </div>
-
-                        {/* Experience */}
-                        <div>
-                          <h2 className="text-xl font-bold mb-3 text-primary">Work Experience</h2>
-                          <div className="space-y-4">
+                          {/* Summary */}
+                          {personalInfo.professional_summary && (
                             <div>
-                              <div className="flex justify-between items-start">
-                                <div>
-                                  <h3 className="font-semibold">Senior Software Engineer</h3>
-                                  <p className="text-sm text-muted-foreground">Tech Corp</p>
-                                </div>
-                                <span className="text-sm text-muted-foreground">2020 - Present</span>
-                              </div>
-                              <ul className="mt-2 space-y-1 text-sm list-disc list-inside">
-                                <li>Developed and maintained web applications using React and Node.js</li>
-                                <li>Collaborated with cross-functional teams to deliver high-quality features</li>
-                                <li>Mentored junior developers and conducted code reviews</li>
-                              </ul>
+                              <h2 className="text-xl font-bold mb-3 text-blue-900">Professional Summary</h2>
+                              <p className="text-sm leading-relaxed text-gray-700">
+                                {personalInfo.professional_summary}
+                              </p>
                             </div>
-                          </div>
-                        </div>
+                          )}
 
-                        {/* Education */}
-                        <div>
-                          <h2 className="text-xl font-bold mb-3 text-primary">Education</h2>
-                          <div>
-                            <div className="flex justify-between items-start">
-                              <div>
-                                <h3 className="font-semibold">Bachelor of Science in Computer Science</h3>
-                                <p className="text-sm text-muted-foreground">University of Technology</p>
+                          {/* Experience */}
+                          {workExperience && workExperience.length > 0 && (
+                            <div>
+                              <h2 className="text-xl font-bold mb-3 text-blue-900">Work Experience</h2>
+                              <div className="space-y-4">
+                                {workExperience.map((exp) => (
+                                  <div key={exp.id}>
+                                    <div className="flex justify-between items-start">
+                                      <div>
+                                        <h3 className="font-semibold text-gray-900">{exp.job_title}</h3>
+                                        <p className="text-sm text-gray-600">{exp.company}{exp.location && `, ${exp.location}`}</p>
+                                      </div>
+                                      <span className="text-sm text-gray-600">
+                                        {exp.start_date && new Date(exp.start_date).toLocaleDateString('en-US', { month: 'short', year: 'numeric' })} - 
+                                        {exp.is_current ? ' Present' : exp.end_date ? ` ${new Date(exp.end_date).toLocaleDateString('en-US', { month: 'short', year: 'numeric' })}` : ''}
+                                      </span>
+                                    </div>
+                                    {exp.description && (
+                                      <p className="mt-2 text-sm text-gray-700 whitespace-pre-wrap">{exp.description}</p>
+                                    )}
+                                  </div>
+                                ))}
                               </div>
-                              <span className="text-sm text-muted-foreground">2016 - 2020</span>
                             </div>
-                          </div>
-                        </div>
+                          )}
 
-                        {/* Skills */}
-                        <div>
-                          <h2 className="text-xl font-bold mb-3 text-primary">Skills</h2>
-                          <div className="flex flex-wrap gap-2">
-                            {["React", "TypeScript", "Node.js", "Python", "SQL", "AWS"].map((skill) => (
-                              <span
-                                key={skill}
-                                className="px-3 py-1 bg-secondary text-secondary-foreground rounded-full text-sm"
-                              >
-                                {skill}
-                              </span>
-                            ))}
-                          </div>
+                          {/* Education */}
+                          {education && education.length > 0 && (
+                            <div>
+                              <h2 className="text-xl font-bold mb-3 text-blue-900">Education</h2>
+                              <div className="space-y-4">
+                                {education.map((edu) => (
+                                  <div key={edu.id}>
+                                    <div className="flex justify-between items-start">
+                                      <div>
+                                        <h3 className="font-semibold text-gray-900">
+                                          {edu.degree}{edu.field_of_study && ` in ${edu.field_of_study}`}
+                                        </h3>
+                                        <p className="text-sm text-gray-600">{edu.school}</p>
+                                      </div>
+                                      <span className="text-sm text-gray-600">
+                                        {edu.graduation_date && new Date(edu.graduation_date).toLocaleDateString('en-US', { month: 'short', year: 'numeric' })}
+                                      </span>
+                                    </div>
+                                    {edu.gpa && <p className="text-sm text-gray-700">GPA: {edu.gpa}</p>}
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
+                          )}
+
+                          {/* Skills */}
+                          {skills && skills.length > 0 && (
+                            <div>
+                              <h2 className="text-xl font-bold mb-3 text-blue-900">Skills</h2>
+                              <div className="flex flex-wrap gap-2">
+                                {skills.map((skill) => (
+                                  <span
+                                    key={skill.id}
+                                    className="px-3 py-1 bg-gray-200 text-gray-900 rounded-full text-sm"
+                                  >
+                                    {skill.skill_name}
+                                  </span>
+                                ))}
+                              </div>
+                            </div>
+                          )}
+
+                          {/* Certifications */}
+                          {certifications && certifications.length > 0 && (
+                            <div>
+                              <h2 className="text-xl font-bold mb-3 text-blue-900">Certifications</h2>
+                              <div className="space-y-3">
+                                {certifications.map((cert) => (
+                                  <div key={cert.id}>
+                                    <h3 className="font-semibold text-gray-900">{cert.certification_name}</h3>
+                                    <p className="text-sm text-gray-600">
+                                      {cert.issuing_organization}
+                                      {cert.date_earned && ` - ${new Date(cert.date_earned).toLocaleDateString('en-US', { month: 'short', year: 'numeric' })}`}
+                                    </p>
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
+                          )}
+
+                          {/* Projects */}
+                          {projects && projects.length > 0 && (
+                            <div>
+                              <h2 className="text-xl font-bold mb-3 text-blue-900">Projects</h2>
+                              <div className="space-y-4">
+                                {projects.map((proj) => (
+                                  <div key={proj.id}>
+                                    <h3 className="font-semibold text-gray-900">{proj.project_name}</h3>
+                                    {proj.description && (
+                                      <p className="text-sm text-gray-700 mt-1">{proj.description}</p>
+                                    )}
+                                    {proj.technologies && proj.technologies.length > 0 && (
+                                      <p className="text-sm text-gray-600 mt-1">
+                                        Technologies: {proj.technologies.join(', ')}
+                                      </p>
+                                    )}
+                                    {(proj.live_url || proj.github_url) && (
+                                      <div className="flex gap-4 mt-1 text-sm text-blue-600">
+                                        {proj.live_url && (
+                                          <a href={proj.live_url} target="_blank" rel="noopener noreferrer">
+                                            Live Demo
+                                          </a>
+                                        )}
+                                        {proj.github_url && (
+                                          <a href={proj.github_url} target="_blank" rel="noopener noreferrer">
+                                            GitHub
+                                          </a>
+                                        )}
+                                      </div>
+                                    )}
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
+                          )}
                         </div>
                       </div>
-                    </div>
+                    )}
                   </TabsContent>
 
                   <TabsContent value="customize">

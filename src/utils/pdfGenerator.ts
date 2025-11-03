@@ -298,16 +298,32 @@ export const generatePDFHtml = (data: ResumeData, template: string = "profession
 
 export const downloadResumeAsPDF = (data: ResumeData, template: string = "professional") => {
   const htmlContent = generatePDFHtml(data, template);
-  const printWindow = window.open('', '_blank');
   
+  // Create a blob from the HTML content
+  const blob = new Blob([htmlContent], { type: 'text/html' });
+  const url = URL.createObjectURL(blob);
+  
+  // Create a temporary link and trigger download
+  const link = document.createElement('a');
+  link.href = url;
+  link.download = `${data.personalInfo.firstName}_${data.personalInfo.lastName}_Resume.html`;
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+  
+  // Clean up the URL
+  URL.revokeObjectURL(url);
+  
+  // Also try to open print dialog for immediate PDF generation
+  const printWindow = window.open('', '_blank');
   if (printWindow) {
     printWindow.document.write(htmlContent);
     printWindow.document.close();
-    
-    // Wait for content to load before printing
     printWindow.onload = () => {
-      printWindow.focus();
-      printWindow.print();
+      setTimeout(() => {
+        printWindow.focus();
+        printWindow.print();
+      }, 250);
     };
   }
 };
