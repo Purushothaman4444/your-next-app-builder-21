@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -7,60 +7,83 @@ import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Plus, Trash2, GripVertical } from "lucide-react";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
-
-interface WorkExperience {
-  id: string;
-  jobTitle: string;
-  company: string;
-  location: string;
-  startDate: string;
-  endDate: string;
-  current: boolean;
-  description: string;
-}
+import { useResumeData } from "@/hooks/useResumeData";
+import { useToast } from "@/hooks/use-toast";
 
 interface WorkExperienceSectionProps {
   resumeId: string;
 }
 
 export const WorkExperienceSection = ({ resumeId }: WorkExperienceSectionProps) => {
-  const [experiences, setExperiences] = useState<WorkExperience[]>([
-    {
-      id: "1",
-      jobTitle: "",
-      company: "",
-      location: "",
-      startDate: "",
-      endDate: "",
-      current: false,
-      description: "",
-    },
-  ]);
+  const { workExperience, mutations } = useResumeData(resumeId);
+  const { toast } = useToast();
+  const [localExperiences, setLocalExperiences] = useState<any[]>([]);
 
-  const addExperience = () => {
-    setExperiences([
-      ...experiences,
-      {
-        id: Date.now().toString(),
-        jobTitle: "",
+  useEffect(() => {
+    if (workExperience && workExperience.length > 0) {
+      setLocalExperiences(workExperience);
+    } else {
+      setLocalExperiences([{
+        id: null,
+        job_title: "",
         company: "",
         location: "",
-        startDate: "",
-        endDate: "",
-        current: false,
+        start_date: "",
+        end_date: "",
+        is_current: false,
+        description: "",
+      }]);
+    }
+  }, [workExperience]);
+
+  const handleSave = async (experience: any) => {
+    const data = {
+      resume_id: resumeId,
+      job_title: experience.job_title,
+      company: experience.company,
+      location: experience.location || null,
+      start_date: experience.start_date || null,
+      end_date: experience.end_date || null,
+      is_current: experience.is_current || false,
+      description: experience.description || null,
+      display_order: experience.display_order || 0,
+    };
+
+    if (experience.id) {
+      mutations.workExperience.update({ id: experience.id, updates: data });
+    } else {
+      mutations.workExperience.create(data);
+    }
+  };
+
+  const addExperience = () => {
+    setLocalExperiences([
+      ...localExperiences,
+      {
+        id: null,
+        job_title: "",
+        company: "",
+        location: "",
+        start_date: "",
+        end_date: "",
+        is_current: false,
         description: "",
       },
     ]);
   };
 
-  const removeExperience = (id: string) => {
-    setExperiences(experiences.filter((exp) => exp.id !== id));
+  const removeExperience = (experience: any) => {
+    if (experience.id) {
+      mutations.workExperience.delete(experience.id);
+    } else {
+      setLocalExperiences(localExperiences.filter((exp) => exp !== experience));
+    }
   };
 
-  const updateExperience = (id: string, field: keyof WorkExperience, value: any) => {
-    setExperiences(
-      experiences.map((exp) => (exp.id === id ? { ...exp, [field]: value } : exp))
-    );
+  const updateExperience = (index: number, field: string, value: any) => {
+    const updated = [...localExperiences];
+    updated[index] = { ...updated[index], [field]: value };
+    setLocalExperiences(updated);
   };
 
   return (
@@ -73,8 +96,8 @@ export const WorkExperienceSection = ({ resumeId }: WorkExperienceSectionProps) 
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-6">
-          {experiences.map((experience, index) => (
-            <Collapsible key={experience.id} defaultOpen={index === 0}>
+          {localExperiences.map((experience, index) => (
+            <Collapsible key={experience.id || index} defaultOpen={index === 0}>
               <Card>
                 <CardHeader className="pb-3">
                   <div className="flex items-center justify-between">
@@ -83,16 +106,16 @@ export const WorkExperienceSection = ({ resumeId }: WorkExperienceSectionProps) 
                       <CollapsibleTrigger asChild>
                         <Button variant="ghost" size="sm">
                           <h4 className="font-semibold">
-                            {experience.jobTitle || `Experience ${index + 1}`}
+                            {experience.job_title || `Experience ${index + 1}`}
                           </h4>
                         </Button>
                       </CollapsibleTrigger>
                     </div>
-                    {experiences.length > 1 && (
+                    {localExperiences.length > 1 && (
                       <Button
                         variant="ghost"
                         size="sm"
-                        onClick={() => removeExperience(experience.id)}
+                        onClick={() => removeExperience(experience)}
                       >
                         <Trash2 className="h-4 w-4 text-destructive" />
                       </Button>
@@ -108,10 +131,9 @@ export const WorkExperienceSection = ({ resumeId }: WorkExperienceSectionProps) 
                         </Label>
                         <Input
                           placeholder="Software Engineer"
-                          value={experience.jobTitle}
-                          onChange={(e) =>
-                            updateExperience(experience.id, "jobTitle", e.target.value)
-                          }
+                          value={experience.job_title || ""}
+                          onChange={(e) => updateExperience(index, "job_title", e.target.value)}
+                          onBlur={() => handleSave(experience)}
                         />
                       </div>
                       <div className="space-y-2">
@@ -120,10 +142,9 @@ export const WorkExperienceSection = ({ resumeId }: WorkExperienceSectionProps) 
                         </Label>
                         <Input
                           placeholder="Tech Corp"
-                          value={experience.company}
-                          onChange={(e) =>
-                            updateExperience(experience.id, "company", e.target.value)
-                          }
+                          value={experience.company || ""}
+                          onChange={(e) => updateExperience(index, "company", e.target.value)}
+                          onBlur={() => handleSave(experience)}
                         />
                       </div>
                     </div>
@@ -132,10 +153,9 @@ export const WorkExperienceSection = ({ resumeId }: WorkExperienceSectionProps) 
                       <Label>Location</Label>
                       <Input
                         placeholder="San Francisco, CA"
-                        value={experience.location}
-                        onChange={(e) =>
-                          updateExperience(experience.id, "location", e.target.value)
-                        }
+                        value={experience.location || ""}
+                        onChange={(e) => updateExperience(index, "location", e.target.value)}
+                        onBlur={() => handleSave(experience)}
                       />
                     </div>
 
@@ -143,35 +163,37 @@ export const WorkExperienceSection = ({ resumeId }: WorkExperienceSectionProps) 
                       <div className="space-y-2">
                         <Label>Start Date</Label>
                         <Input
-                          type="month"
-                          value={experience.startDate}
-                          onChange={(e) =>
-                            updateExperience(experience.id, "startDate", e.target.value)
-                          }
+                          type="date"
+                          value={experience.start_date || ""}
+                          onChange={(e) => updateExperience(index, "start_date", e.target.value)}
+                          onBlur={() => handleSave(experience)}
                         />
                       </div>
                       <div className="space-y-2">
                         <Label>End Date</Label>
                         <Input
-                          type="month"
-                          value={experience.endDate}
-                          onChange={(e) =>
-                            updateExperience(experience.id, "endDate", e.target.value)
-                          }
-                          disabled={experience.current}
+                          type="date"
+                          value={experience.end_date || ""}
+                          onChange={(e) => updateExperience(index, "end_date", e.target.value)}
+                          onBlur={() => handleSave(experience)}
+                          disabled={experience.is_current}
                         />
                       </div>
                     </div>
 
                     <div className="flex items-center space-x-2">
                       <Checkbox
-                        id={`current-${experience.id}`}
-                        checked={experience.current}
-                        onCheckedChange={(checked) =>
-                          updateExperience(experience.id, "current", checked)
-                        }
+                        id={`current-${index}`}
+                        checked={experience.is_current || false}
+                        onCheckedChange={(checked) => {
+                          updateExperience(index, "is_current", checked);
+                          if (checked) {
+                            updateExperience(index, "end_date", null);
+                          }
+                          handleSave({ ...experience, is_current: checked, end_date: checked ? null : experience.end_date });
+                        }}
                       />
-                      <Label htmlFor={`current-${experience.id}`} className="cursor-pointer">
+                      <Label htmlFor={`current-${index}`} className="cursor-pointer">
                         I currently work here
                       </Label>
                     </div>
@@ -181,10 +203,9 @@ export const WorkExperienceSection = ({ resumeId }: WorkExperienceSectionProps) 
                       <Textarea
                         placeholder="• Developed and maintained web applications&#10;• Collaborated with cross-functional teams&#10;• Implemented new features and bug fixes"
                         className="min-h-32"
-                        value={experience.description}
-                        onChange={(e) =>
-                          updateExperience(experience.id, "description", e.target.value)
-                        }
+                        value={experience.description || ""}
+                        onChange={(e) => updateExperience(index, "description", e.target.value)}
+                        onBlur={() => handleSave(experience)}
                       />
                       <p className="text-sm text-muted-foreground">
                         Use bullet points to highlight your key responsibilities and achievements

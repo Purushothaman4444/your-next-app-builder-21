@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -6,55 +6,78 @@ import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { Plus, Trash2, GripVertical } from "lucide-react";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
-
-interface Education {
-  id: string;
-  school: string;
-  degree: string;
-  field: string;
-  graduationDate: string;
-  gpa: string;
-  coursework: string;
-}
+import { useResumeData } from "@/hooks/useResumeData";
 
 interface EducationSectionProps {
   resumeId: string;
 }
 
 export const EducationSection = ({ resumeId }: EducationSectionProps) => {
-  const [educations, setEducations] = useState<Education[]>([
-    {
-      id: "1",
-      school: "",
-      degree: "",
-      field: "",
-      graduationDate: "",
-      gpa: "",
-      coursework: "",
-    },
-  ]);
+  const { education, mutations } = useResumeData(resumeId);
+  const [localEducation, setLocalEducation] = useState<any[]>([]);
 
-  const addEducation = () => {
-    setEducations([
-      ...educations,
-      {
-        id: Date.now().toString(),
+  useEffect(() => {
+    if (education && education.length > 0) {
+      setLocalEducation(education);
+    } else {
+      setLocalEducation([{
+        id: null,
         school: "",
         degree: "",
-        field: "",
-        graduationDate: "",
+        field_of_study: "",
+        graduation_date: "",
         gpa: "",
-        coursework: "",
+        relevant_coursework: "",
+      }]);
+    }
+  }, [education]);
+
+  const handleSave = async (edu: any) => {
+    const data = {
+      resume_id: resumeId,
+      school: edu.school,
+      degree: edu.degree,
+      field_of_study: edu.field_of_study || null,
+      graduation_date: edu.graduation_date || null,
+      gpa: edu.gpa || null,
+      relevant_coursework: edu.relevant_coursework || null,
+      display_order: edu.display_order || 0,
+    };
+
+    if (edu.id) {
+      mutations.education.update({ id: edu.id, updates: data });
+    } else {
+      mutations.education.create(data);
+    }
+  };
+
+  const addEducation = () => {
+    setLocalEducation([
+      ...localEducation,
+      {
+        id: null,
+        school: "",
+        degree: "",
+        field_of_study: "",
+        graduation_date: "",
+        gpa: "",
+        relevant_coursework: "",
       },
     ]);
   };
 
-  const removeEducation = (id: string) => {
-    setEducations(educations.filter((edu) => edu.id !== id));
+  const removeEducation = (edu: any) => {
+    if (edu.id) {
+      mutations.education.delete(edu.id);
+    } else {
+      setLocalEducation(localEducation.filter((e) => e !== edu));
+    }
   };
 
-  const updateEducation = (id: string, field: keyof Education, value: string) => {
-    setEducations(educations.map((edu) => (edu.id === id ? { ...edu, [field]: value } : edu)));
+  const updateEducation = (index: number, field: string, value: string) => {
+    const updated = [...localEducation];
+    updated[index] = { ...updated[index], [field]: value };
+    setLocalEducation(updated);
   };
 
   return (
@@ -67,8 +90,8 @@ export const EducationSection = ({ resumeId }: EducationSectionProps) => {
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-6">
-          {educations.map((education, index) => (
-            <Collapsible key={education.id} defaultOpen={index === 0}>
+          {localEducation.map((edu, index) => (
+            <Collapsible key={edu.id || index} defaultOpen={index === 0}>
               <Card>
                 <CardHeader className="pb-3">
                   <div className="flex items-center justify-between">
@@ -77,16 +100,16 @@ export const EducationSection = ({ resumeId }: EducationSectionProps) => {
                       <CollapsibleTrigger asChild>
                         <Button variant="ghost" size="sm">
                           <h4 className="font-semibold">
-                            {education.degree || `Education ${index + 1}`}
+                            {edu.degree || `Education ${index + 1}`}
                           </h4>
                         </Button>
                       </CollapsibleTrigger>
                     </div>
-                    {educations.length > 1 && (
+                    {localEducation.length > 1 && (
                       <Button
                         variant="ghost"
                         size="sm"
-                        onClick={() => removeEducation(education.id)}
+                        onClick={() => removeEducation(edu)}
                       >
                         <Trash2 className="h-4 w-4 text-destructive" />
                       </Button>
@@ -101,8 +124,9 @@ export const EducationSection = ({ resumeId }: EducationSectionProps) => {
                       </Label>
                       <Input
                         placeholder="University of Technology"
-                        value={education.school}
-                        onChange={(e) => updateEducation(education.id, "school", e.target.value)}
+                        value={edu.school || ""}
+                        onChange={(e) => updateEducation(index, "school", e.target.value)}
+                        onBlur={() => handleSave(edu)}
                       />
                     </div>
 
@@ -113,16 +137,18 @@ export const EducationSection = ({ resumeId }: EducationSectionProps) => {
                         </Label>
                         <Input
                           placeholder="Bachelor of Science"
-                          value={education.degree}
-                          onChange={(e) => updateEducation(education.id, "degree", e.target.value)}
+                          value={edu.degree || ""}
+                          onChange={(e) => updateEducation(index, "degree", e.target.value)}
+                          onBlur={() => handleSave(edu)}
                         />
                       </div>
                       <div className="space-y-2">
                         <Label>Field of Study</Label>
                         <Input
                           placeholder="Computer Science"
-                          value={education.field}
-                          onChange={(e) => updateEducation(education.id, "field", e.target.value)}
+                          value={edu.field_of_study || ""}
+                          onChange={(e) => updateEducation(index, "field_of_study", e.target.value)}
+                          onBlur={() => handleSave(edu)}
                         />
                       </div>
                     </div>
@@ -131,19 +157,19 @@ export const EducationSection = ({ resumeId }: EducationSectionProps) => {
                       <div className="space-y-2">
                         <Label>Graduation Date</Label>
                         <Input
-                          type="month"
-                          value={education.graduationDate}
-                          onChange={(e) =>
-                            updateEducation(education.id, "graduationDate", e.target.value)
-                          }
+                          type="date"
+                          value={edu.graduation_date || ""}
+                          onChange={(e) => updateEducation(index, "graduation_date", e.target.value)}
+                          onBlur={() => handleSave(edu)}
                         />
                       </div>
                       <div className="space-y-2">
                         <Label>GPA (Optional)</Label>
                         <Input
                           placeholder="3.8/4.0"
-                          value={education.gpa}
-                          onChange={(e) => updateEducation(education.id, "gpa", e.target.value)}
+                          value={edu.gpa || ""}
+                          onChange={(e) => updateEducation(index, "gpa", e.target.value)}
+                          onBlur={() => handleSave(edu)}
                         />
                       </div>
                     </div>
@@ -153,10 +179,9 @@ export const EducationSection = ({ resumeId }: EducationSectionProps) => {
                       <Textarea
                         placeholder="Data Structures, Algorithms, Database Systems, Web Development"
                         className="min-h-24"
-                        value={education.coursework}
-                        onChange={(e) =>
-                          updateEducation(education.id, "coursework", e.target.value)
-                        }
+                        value={edu.relevant_coursework || ""}
+                        onChange={(e) => updateEducation(index, "relevant_coursework", e.target.value)}
+                        onBlur={() => handleSave(edu)}
                       />
                     </div>
                   </CardContent>

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -6,66 +6,89 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Plus, Trash2, Upload, CheckCircle2, Clock } from "lucide-react";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
-
-interface Certification {
-  id: string;
-  name: string;
-  issuer: string;
-  dateEarned: string;
-  expirationDate: string;
-  credentialId: string;
-  verified: boolean;
-  documentUrl?: string;
-}
+import { useResumeData } from "@/hooks/useResumeData";
 
 interface CertificationsSectionProps {
   resumeId: string;
 }
 
 export const CertificationsSection = ({ resumeId }: CertificationsSectionProps) => {
-  const [certifications, setCertifications] = useState<Certification[]>([
-    {
-      id: "1",
-      name: "",
-      issuer: "",
-      dateEarned: "",
-      expirationDate: "",
-      credentialId: "",
-      verified: false,
-    },
-  ]);
+  const { certifications, mutations } = useResumeData(resumeId);
+  const [localCertifications, setLocalCertifications] = useState<any[]>([]);
+
+  useEffect(() => {
+    if (certifications && certifications.length > 0) {
+      setLocalCertifications(certifications);
+    } else {
+      setLocalCertifications([{
+        id: null,
+        certification_name: "",
+        issuing_organization: "",
+        date_earned: "",
+        expiration_date: "",
+        credential_id: "",
+        is_verified: false,
+        certificate_url: "",
+      }]);
+    }
+  }, [certifications]);
+
+  const handleSave = async (cert: any) => {
+    const data = {
+      resume_id: resumeId,
+      certification_name: cert.certification_name,
+      issuing_organization: cert.issuing_organization,
+      date_earned: cert.date_earned || null,
+      expiration_date: cert.expiration_date || null,
+      credential_id: cert.credential_id || null,
+      is_verified: cert.is_verified || false,
+      certificate_url: cert.certificate_url || null,
+      display_order: cert.display_order || 0,
+    };
+
+    if (cert.id) {
+      mutations.certifications.update({ id: cert.id, updates: data });
+    } else {
+      mutations.certifications.create(data);
+    }
+  };
 
   const addCertification = () => {
-    setCertifications([
-      ...certifications,
+    setLocalCertifications([
+      ...localCertifications,
       {
-        id: Date.now().toString(),
-        name: "",
-        issuer: "",
-        dateEarned: "",
-        expirationDate: "",
-        credentialId: "",
-        verified: false,
+        id: null,
+        certification_name: "",
+        issuing_organization: "",
+        date_earned: "",
+        expiration_date: "",
+        credential_id: "",
+        is_verified: false,
+        certificate_url: "",
       },
     ]);
   };
 
-  const removeCertification = (id: string) => {
-    setCertifications(certifications.filter((cert) => cert.id !== id));
+  const removeCertification = (cert: any) => {
+    if (cert.id) {
+      mutations.certifications.delete(cert.id);
+    } else {
+      setLocalCertifications(localCertifications.filter((c) => c !== cert));
+    }
   };
 
-  const updateCertification = (id: string, field: keyof Certification, value: any) => {
-    setCertifications(
-      certifications.map((cert) => (cert.id === id ? { ...cert, [field]: value } : cert))
-    );
+  const updateCertification = (index: number, field: string, value: any) => {
+    const updated = [...localCertifications];
+    updated[index] = { ...updated[index], [field]: value };
+    setLocalCertifications(updated);
   };
 
-  const handleFileUpload = (id: string, e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileUpload = (index: number, e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
-      // In a real app, this would upload to a server
-      updateCertification(id, "documentUrl", URL.createObjectURL(file));
-      updateCertification(id, "verified", true);
+      // In a real app, this would upload to Supabase storage
+      updateCertification(index, "certificate_url", URL.createObjectURL(file));
+      updateCertification(index, "is_verified", true);
     }
   };
 
@@ -79,8 +102,8 @@ export const CertificationsSection = ({ resumeId }: CertificationsSectionProps) 
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-6">
-          {certifications.map((certification, index) => (
-            <Collapsible key={certification.id} defaultOpen={index === 0}>
+          {localCertifications.map((certification, index) => (
+            <Collapsible key={certification.id || index} defaultOpen={index === 0}>
               <Card>
                 <CardHeader className="pb-3">
                   <div className="flex items-center justify-between">
@@ -88,11 +111,11 @@ export const CertificationsSection = ({ resumeId }: CertificationsSectionProps) 
                       <CollapsibleTrigger asChild>
                         <Button variant="ghost" size="sm">
                           <h4 className="font-semibold">
-                            {certification.name || `Certification ${index + 1}`}
+                            {certification.certification_name || `Certification ${index + 1}`}
                           </h4>
                         </Button>
                       </CollapsibleTrigger>
-                      {certification.verified ? (
+                      {certification.is_verified ? (
                         <Badge className="bg-emerald text-white">
                           <CheckCircle2 className="h-3 w-3 mr-1" />
                           Verified
@@ -104,11 +127,11 @@ export const CertificationsSection = ({ resumeId }: CertificationsSectionProps) 
                         </Badge>
                       )}
                     </div>
-                    {certifications.length > 1 && (
+                    {localCertifications.length > 1 && (
                       <Button
                         variant="ghost"
                         size="sm"
-                        onClick={() => removeCertification(certification.id)}
+                        onClick={() => removeCertification(certification)}
                       >
                         <Trash2 className="h-4 w-4 text-destructive" />
                       </Button>
@@ -123,10 +146,9 @@ export const CertificationsSection = ({ resumeId }: CertificationsSectionProps) 
                       </Label>
                       <Input
                         placeholder="AWS Certified Solutions Architect"
-                        value={certification.name}
-                        onChange={(e) =>
-                          updateCertification(certification.id, "name", e.target.value)
-                        }
+                        value={certification.certification_name || ""}
+                        onChange={(e) => updateCertification(index, "certification_name", e.target.value)}
+                        onBlur={() => handleSave(certification)}
                       />
                     </div>
 
@@ -136,10 +158,9 @@ export const CertificationsSection = ({ resumeId }: CertificationsSectionProps) 
                       </Label>
                       <Input
                         placeholder="Amazon Web Services"
-                        value={certification.issuer}
-                        onChange={(e) =>
-                          updateCertification(certification.id, "issuer", e.target.value)
-                        }
+                        value={certification.issuing_organization || ""}
+                        onChange={(e) => updateCertification(index, "issuing_organization", e.target.value)}
+                        onBlur={() => handleSave(certification)}
                       />
                     </div>
 
@@ -147,21 +168,19 @@ export const CertificationsSection = ({ resumeId }: CertificationsSectionProps) 
                       <div className="space-y-2">
                         <Label>Date Earned</Label>
                         <Input
-                          type="month"
-                          value={certification.dateEarned}
-                          onChange={(e) =>
-                            updateCertification(certification.id, "dateEarned", e.target.value)
-                          }
+                          type="date"
+                          value={certification.date_earned || ""}
+                          onChange={(e) => updateCertification(index, "date_earned", e.target.value)}
+                          onBlur={() => handleSave(certification)}
                         />
                       </div>
                       <div className="space-y-2">
                         <Label>Expiration Date (if applicable)</Label>
                         <Input
-                          type="month"
-                          value={certification.expirationDate}
-                          onChange={(e) =>
-                            updateCertification(certification.id, "expirationDate", e.target.value)
-                          }
+                          type="date"
+                          value={certification.expiration_date || ""}
+                          onChange={(e) => updateCertification(index, "expiration_date", e.target.value)}
+                          onBlur={() => handleSave(certification)}
                         />
                       </div>
                     </div>
@@ -170,10 +189,9 @@ export const CertificationsSection = ({ resumeId }: CertificationsSectionProps) 
                       <Label>Credential ID</Label>
                       <Input
                         placeholder="ABC123XYZ"
-                        value={certification.credentialId}
-                        onChange={(e) =>
-                          updateCertification(certification.id, "credentialId", e.target.value)
-                        }
+                        value={certification.credential_id || ""}
+                        onChange={(e) => updateCertification(index, "credential_id", e.target.value)}
+                        onBlur={() => handleSave(certification)}
                       />
                     </div>
 
@@ -182,24 +200,24 @@ export const CertificationsSection = ({ resumeId }: CertificationsSectionProps) 
                       <div className="flex gap-2">
                         <input
                           type="file"
-                          id={`cert-upload-${certification.id}`}
+                          id={`cert-upload-${index}`}
                           accept=".pdf,.jpg,.jpeg,.png"
                           className="hidden"
-                          onChange={(e) => handleFileUpload(certification.id, e)}
+                          onChange={(e) => handleFileUpload(index, e)}
                         />
                         <Button
                           type="button"
                           variant="outline"
                           className="w-full"
                           onClick={() =>
-                            document.getElementById(`cert-upload-${certification.id}`)?.click()
+                            document.getElementById(`cert-upload-${index}`)?.click()
                           }
                         >
                           <Upload className="h-4 w-4 mr-2" />
-                          {certification.documentUrl ? "Change Document" : "Upload Document"}
+                          {certification.certificate_url ? "Change Document" : "Upload Document"}
                         </Button>
                       </div>
-                      {certification.documentUrl && (
+                      {certification.certificate_url && (
                         <p className="text-sm text-muted-foreground">
                           Document uploaded successfully
                         </p>
