@@ -5,57 +5,37 @@ import { PageHeader } from "@/components/layouts/PageHeader";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { FileText } from "lucide-react";
-import { Link } from "react-router-dom";
-
-const templates = [
-  {
-    id: "professional",
-    name: "Professional",
-    category: "Professional",
-    description: "Clean and ATS-friendly design for corporate roles",
-  },
-  {
-    id: "modern",
-    name: "Modern",
-    category: "Creative",
-    description: "Contemporary design with bold typography",
-  },
-  {
-    id: "simple",
-    name: "Simple",
-    category: "Simple",
-    description: "Minimalist layout focusing on content",
-  },
-  {
-    id: "creative",
-    name: "Creative",
-    category: "Creative",
-    description: "Eye-catching design for creative industries",
-  },
-  {
-    id: "executive",
-    name: "Executive",
-    category: "Professional",
-    description: "Sophisticated design for senior positions",
-  },
-  {
-    id: "tech",
-    name: "Tech",
-    category: "Professional",
-    description: "Technical layout for IT and engineering roles",
-  },
-];
-
-const categories = ["All", "Professional", "Creative", "Simple"];
+import { FileText, Palette } from "lucide-react";
+import { useNavigate } from "react-router-dom";
+import { TEMPLATES, TEMPLATE_CATEGORIES, getTemplatesByCategory } from "@/constants/templates";
+import { useResumes } from "@/hooks/useResumes";
+import { useToast } from "@/hooks/use-toast";
 
 const Templates = () => {
+  const navigate = useNavigate();
+  const { toast } = useToast();
+  const { createResume, isCreating } = useResumes();
   const [selectedCategory, setSelectedCategory] = useState("All");
+  const [creatingTemplateId, setCreatingTemplateId] = useState<string | null>(null);
 
-  const filteredTemplates =
-    selectedCategory === "All"
-      ? templates
-      : templates.filter((t) => t.category === selectedCategory);
+  const filteredTemplates = getTemplatesByCategory(selectedCategory);
+
+  const handleSelectTemplate = async (templateId: string) => {
+    setCreatingTemplateId(templateId);
+    
+    // Create a new resume with this template
+    try {
+      const template = TEMPLATES.find(t => t.id === templateId);
+      await createResume(`New ${template?.name || 'Resume'}`);
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to create resume. Please try again.",
+        variant: "destructive",
+      });
+      setCreatingTemplateId(null);
+    }
+  };
 
   return (
     <MainLayout>
@@ -67,7 +47,7 @@ const Templates = () => {
 
         {/* Category Filters */}
         <div className="flex flex-wrap gap-2 mb-8">
-          {categories.map((category) => (
+          {TEMPLATE_CATEGORIES.map((category) => (
             <Button
               key={category}
               variant={selectedCategory === category ? "default" : "outline"}
@@ -83,24 +63,33 @@ const Templates = () => {
           {filteredTemplates.map((template) => (
             <Card
               key={template.id}
-              className="hover:border-primary/50 transition-colors cursor-pointer group"
+              className="hover:border-primary/50 transition-colors group"
             >
               <CardContent className="pt-6">
-                <div className="aspect-[8.5/11] bg-secondary rounded-md mb-4 flex items-center justify-center group-hover:bg-primary/5 transition-colors">
-                  <FileText className="h-20 w-20 text-muted-foreground" />
+                <div className="aspect-[8.5/11] bg-secondary rounded-md mb-4 flex flex-col items-center justify-center group-hover:bg-primary/5 transition-colors relative overflow-hidden">
+                  <FileText className="h-20 w-20 text-muted-foreground mb-2" />
+                  <div className="flex items-center gap-1 text-xs text-muted-foreground">
+                    <Palette className="h-3 w-3" />
+                    <span>{template.color}</span>
+                  </div>
+                  <div className="absolute bottom-2 text-xs text-muted-foreground">
+                    {template.fontFamily}
+                  </div>
                 </div>
-                <div className="space-y-2">
+                <div className="space-y-3">
                   <div className="flex items-center justify-between">
                     <h3 className="font-semibold text-lg">{template.name}</h3>
                     <Badge variant="secondary">{template.category}</Badge>
                   </div>
-                  <p className="text-sm text-muted-foreground">
+                  <p className="text-sm text-muted-foreground line-clamp-2">
                     {template.description}
                   </p>
-                  <Button className="w-full" asChild>
-                    <Link to={`/resume/create?template=${template.id}`}>
-                      Use Template
-                    </Link>
+                  <Button 
+                    className="w-full" 
+                    onClick={() => handleSelectTemplate(template.id)}
+                    disabled={isCreating || creatingTemplateId === template.id}
+                  >
+                    {creatingTemplateId === template.id ? "Creating..." : "Use Template"}
                   </Button>
                 </div>
               </CardContent>

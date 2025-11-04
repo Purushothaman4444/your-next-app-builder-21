@@ -13,6 +13,11 @@ export interface Resume {
   last_accessed_at: string;
 }
 
+interface CreateResumeParams {
+  title: string;
+  templateId?: string;
+}
+
 export const useResumes = () => {
   const { user } = useAuth();
   const { toast } = useToast();
@@ -35,15 +40,19 @@ export const useResumes = () => {
   });
 
   const createResume = useMutation({
-    mutationFn: async (title: string) => {
+    mutationFn: async (params: CreateResumeParams | string) => {
       if (!user) throw new Error("User not authenticated");
+
+      // Support both old string format and new object format
+      const title = typeof params === 'string' ? params : params.title;
+      const templateId = typeof params === 'string' ? 'professional-classic' : (params.templateId || 'professional-classic');
 
       const { data, error } = await supabase
         .from("resumes")
         .insert({
           user_id: user.id,
           title,
-          template_id: "professional",
+          template_id: templateId,
         })
         .select()
         .single();
