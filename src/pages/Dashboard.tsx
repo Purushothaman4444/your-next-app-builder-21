@@ -9,22 +9,42 @@ import { ActivityFeed } from "@/components/dashboard/ActivityFeed";
 import { EmptyState } from "@/components/dashboard/EmptyState";
 import { Plus } from "lucide-react";
 import { Link } from "react-router-dom";
+import { useResumes } from "@/hooks/useResumes";
+import { useRealtimeResumes } from "@/hooks/useRealtimeResumes";
+import { useAuth } from "@/contexts/AuthContext";
+import { LoadingSpinner } from "@/components/LoadingSpinner";
 
 const Dashboard = () => {
-  // Mock data - will be replaced with real data later
-  const resumes = [];
+  const { user } = useAuth();
+  const { resumes, isLoading } = useResumes();
+  useRealtimeResumes();
+
   const stats = {
-    totalResumes: 0,
-    downloads: 0,
-    lastModified: null,
+    totalResumes: resumes?.length || 0,
+    downloads: 0, // TODO: Track downloads in the future
+    lastModified: resumes?.[0]?.updated_at 
+      ? new Date(resumes[0].updated_at).toLocaleDateString()
+      : null,
   };
+
+  if (isLoading) {
+    return (
+      <MainLayout>
+        <ContentWrapper>
+          <div className="flex justify-center items-center min-h-[400px]">
+            <LoadingSpinner />
+          </div>
+        </ContentWrapper>
+      </MainLayout>
+    );
+  }
 
   return (
     <MainLayout>
       <ContentWrapper>
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8">
           <PageHeader
-            title="Welcome back, User!"
+            title={`Welcome back, ${user?.email?.split('@')[0] || 'User'}!`}
             description="Manage your resumes and track your progress"
           />
           <Button asChild size="lg">
@@ -85,11 +105,11 @@ const Dashboard = () => {
             </Button>
           </div>
 
-          {resumes.length === 0 ? (
+          {!resumes || resumes.length === 0 ? (
             <EmptyState />
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {resumes.slice(0, 3).map((resume: any) => (
+              {resumes.slice(0, 3).map((resume) => (
                 <ResumeCard key={resume.id} resume={resume} />
               ))}
             </div>
