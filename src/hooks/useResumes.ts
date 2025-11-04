@@ -51,12 +51,14 @@ export const useResumes = () => {
       if (error) throw error;
       return data;
     },
-    onSuccess: () => {
+    onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ["resumes"] });
       toast({
         title: "Resume Created",
         description: "Your new resume has been created successfully.",
       });
+      // Navigate to the resume builder with the new resume ID
+      window.location.href = `/resume/create?resumeId=${data.id}`;
     },
     onError: (error: Error) => {
       toast({
