@@ -1,5 +1,6 @@
 // PDF Generation utility using browser's built-in PDF generation
 // This creates a print-friendly view that can be saved as PDF
+import { getTemplatePDFStyles } from "./templateStyles";
 
 export interface ResumeData {
   personalInfo: {
@@ -47,8 +48,9 @@ export interface ResumeData {
   }>;
 }
 
-export const generatePDFHtml = (data: ResumeData, template: string = "professional"): string => {
+export const generatePDFHtml = (data: ResumeData, template: string = "professional-classic"): string => {
   const { personalInfo, workExperience, education, skills, certifications, projects } = data;
+  const templateStyles = getTemplatePDFStyles(template);
 
   return `
     <!DOCTYPE html>
@@ -77,19 +79,6 @@ export const generatePDFHtml = (data: ResumeData, template: string = "profession
             margin: 0 auto;
           }
           
-          .header {
-            text-align: center;
-            border-bottom: 2px solid #1E40AF;
-            padding-bottom: 12pt;
-            margin-bottom: 16pt;
-          }
-          
-          .header h1 {
-            font-size: 24pt;
-            color: #1E40AF;
-            margin-bottom: 6pt;
-          }
-          
           .contact-info {
             font-size: 10pt;
             color: #666;
@@ -98,19 +87,6 @@ export const generatePDFHtml = (data: ResumeData, template: string = "profession
           .section {
             margin-bottom: 16pt;
             page-break-inside: avoid;
-          }
-          
-          .section-title {
-            font-size: 14pt;
-            font-weight: bold;
-            color: #1E40AF;
-            border-bottom: 1px solid #ddd;
-            padding-bottom: 4pt;
-            margin-bottom: 8pt;
-          }
-          
-          .entry {
-            margin-bottom: 12pt;
           }
           
           .entry-header {
@@ -139,36 +115,6 @@ export const generatePDFHtml = (data: ResumeData, template: string = "profession
             margin-left: 12pt;
           }
           
-          .skills-grid {
-            display: grid;
-            grid-template-columns: repeat(3, 1fr);
-            gap: 8pt;
-          }
-          
-          .skill-item {
-            display: flex;
-            align-items: center;
-            font-size: 10pt;
-          }
-          
-          .skill-level {
-            width: 40pt;
-            height: 4pt;
-            background: #e0e0e0;
-            border-radius: 2pt;
-            margin-left: 6pt;
-            position: relative;
-          }
-          
-          .skill-level-fill {
-            position: absolute;
-            left: 0;
-            top: 0;
-            height: 100%;
-            background: #10B981;
-            border-radius: 2pt;
-          }
-          
           ul {
             margin-left: 20pt;
             margin-top: 4pt;
@@ -184,6 +130,9 @@ export const generatePDFHtml = (data: ResumeData, template: string = "profession
               print-color-adjust: exact;
             }
           }
+          
+          /* Template-specific styles */
+          ${templateStyles}
         </style>
       </head>
       <body>
@@ -247,14 +196,9 @@ export const generatePDFHtml = (data: ResumeData, template: string = "profession
         ${skills.length > 0 ? `
           <div class="section">
             <div class="section-title">Skills</div>
-            <div class="skills-grid">
+            <div style="display: flex; flex-wrap: wrap; gap: 6pt;">
               ${skills.map(skill => `
-                <div class="skill-item">
-                  ${skill.skillName}
-                  <div class="skill-level">
-                    <div class="skill-level-fill" style="width: ${skill.proficiencyLevel}%"></div>
-                  </div>
-                </div>
+                <span class="skill-item">${skill.skillName}</span>
               `).join('')}
             </div>
           </div>
@@ -296,7 +240,7 @@ export const generatePDFHtml = (data: ResumeData, template: string = "profession
   `;
 };
 
-export const downloadResumeAsPDF = (data: ResumeData, template: string = "professional") => {
+export const downloadResumeAsPDF = (data: ResumeData, template: string = "professional-classic") => {
   const htmlContent = generatePDFHtml(data, template);
   
   // Create a blob from the HTML content
