@@ -5,6 +5,8 @@ import { PageHeader } from "@/components/layouts/PageHeader";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Download, Share2, Edit, FileText } from "lucide-react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { useResumeData } from "@/hooks/useResumeData";
@@ -14,6 +16,7 @@ import { useToast } from "@/hooks/use-toast";
 import { TEMPLATES, getTemplateById } from "@/constants/templates";
 import { getTemplateStyles } from "@/utils/templateStyles";
 import { useResumes } from "@/hooks/useResumes";
+import { supabase } from "@/integrations/supabase/client";
 
 const ResumePreview = () => {
   const navigate = useNavigate();
@@ -23,6 +26,8 @@ const ResumePreview = () => {
   const { resumes } = useResumes();
   const currentResume = resumes?.find(r => r.id === resumeId);
   const [selectedTemplate, setSelectedTemplate] = useState(currentResume?.template_id || "professional-classic");
+  const [customColor, setCustomColor] = useState(currentResume?.custom_styles?.color || "#1E40AF");
+  const [customFont, setCustomFont] = useState(currentResume?.custom_styles?.font || "Inter");
 
   const { personalInfo, workExperience, education, skills, certifications, projects } = useResumeData(resumeId || "");
 
@@ -30,7 +35,35 @@ const ResumePreview = () => {
     if (currentResume?.template_id) {
       setSelectedTemplate(currentResume.template_id);
     }
-  }, [currentResume?.template_id]);
+    if (currentResume?.custom_styles) {
+      setCustomColor(currentResume.custom_styles.color || "#1E40AF");
+      setCustomFont(currentResume.custom_styles.font || "Inter");
+    }
+  }, [currentResume?.template_id, currentResume?.custom_styles]);
+
+  const saveCustomization = async () => {
+    if (!resumeId) return;
+
+    const { error } = await supabase
+      .from('resumes')
+      .update({ 
+        custom_styles: { color: customColor, font: customFont }
+      })
+      .eq('id', resumeId);
+
+    if (error) {
+      toast({
+        title: "Error",
+        description: "Failed to save customization",
+        variant: "destructive",
+      });
+    } else {
+      toast({
+        title: "Success",
+        description: "Customization saved successfully",
+      });
+    }
+  };
 
   const templateStyles = getTemplateStyles(selectedTemplate);
   const currentTemplateInfo = getTemplateById(selectedTemplate);
@@ -341,15 +374,54 @@ const ResumePreview = () => {
                   <TabsContent value="customize">
                     <div className="space-y-6">
                       <Card>
-                        <CardContent className="pt-6">
-                          <h3 className="font-semibold mb-4">Customization Options</h3>
-                          <p className="text-sm text-muted-foreground">
-                            Customize colors, fonts, and layout options for your resume template.
-                            This feature will allow you to personalize your resume appearance.
-                          </p>
-                          <div className="mt-4 p-4 bg-muted rounded-lg">
-                            <p className="text-sm text-muted-foreground text-center">
-                              Template customization controls will be available here
+                        <CardContent className="pt-6 space-y-6">
+                          <div>
+                            <h3 className="font-semibold mb-4">Customization Options</h3>
+                            <p className="text-sm text-muted-foreground mb-6">
+                              Customize colors and fonts for your resume template.
+                            </p>
+                          </div>
+
+                          <div className="space-y-4">
+                            <div className="space-y-2">
+                              <Label htmlFor="color-picker">Primary Color</Label>
+                              <div className="flex gap-3 items-center">
+                                <input
+                                  id="color-picker"
+                                  type="color"
+                                  value={customColor}
+                                  onChange={(e) => setCustomColor(e.target.value)}
+                                  className="h-10 w-20 rounded border cursor-pointer"
+                                />
+                                <span className="text-sm text-muted-foreground">{customColor}</span>
+                              </div>
+                            </div>
+
+                            <div className="space-y-2">
+                              <Label htmlFor="font-select">Font Family</Label>
+                              <Select value={customFont} onValueChange={setCustomFont}>
+                                <SelectTrigger id="font-select">
+                                  <SelectValue />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  <SelectItem value="Inter">Inter (Modern)</SelectItem>
+                                  <SelectItem value="Georgia">Georgia (Classic)</SelectItem>
+                                  <SelectItem value="Arial">Arial (Simple)</SelectItem>
+                                  <SelectItem value="Playfair Display">Playfair Display (Elegant)</SelectItem>
+                                  <SelectItem value="Roboto">Roboto (Clean)</SelectItem>
+                                  <SelectItem value="Merriweather">Merriweather (Professional)</SelectItem>
+                                </SelectContent>
+                              </Select>
+                            </div>
+
+                            <Button onClick={saveCustomization} className="w-full">
+                              Save Customization
+                            </Button>
+                          </div>
+
+                          <div className="mt-6 p-4 bg-muted rounded-lg">
+                            <p className="text-sm text-muted-foreground">
+                              Your customizations will be applied to both the preview and the exported PDF.
                             </p>
                           </div>
                         </CardContent>
