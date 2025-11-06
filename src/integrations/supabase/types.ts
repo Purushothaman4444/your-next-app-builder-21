@@ -310,6 +310,7 @@ export type Database = {
       resumes: {
         Row: {
           created_at: string
+          custom_styles: Json | null
           id: string
           last_accessed_at: string | null
           template_id: string
@@ -319,6 +320,7 @@ export type Database = {
         }
         Insert: {
           created_at?: string
+          custom_styles?: Json | null
           id?: string
           last_accessed_at?: string | null
           template_id?: string
@@ -328,6 +330,7 @@ export type Database = {
         }
         Update: {
           created_at?: string
+          custom_styles?: Json | null
           id?: string
           last_accessed_at?: string | null
           template_id?: string
