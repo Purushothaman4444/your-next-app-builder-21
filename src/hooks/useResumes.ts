@@ -2,6 +2,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
+import { useActivities } from "@/hooks/useActivities";
 
 export interface Resume {
   id: string;
@@ -26,6 +27,7 @@ export const useResumes = () => {
   const { user } = useAuth();
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const { logActivity } = useActivities();
 
   const { data: resumes, isLoading, error } = useQuery({
     queryKey: ["resumes", user?.id],
@@ -66,6 +68,11 @@ export const useResumes = () => {
     },
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ["resumes"] });
+      logActivity({
+        activityType: 'created',
+        resumeTitle: data.title,
+        resumeId: data.id,
+      });
       toast({
         title: "Resume Created",
         description: "Your new resume has been created successfully.",
@@ -94,8 +101,13 @@ export const useResumes = () => {
       if (error) throw error;
       return data;
     },
-    onSuccess: () => {
+    onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ["resumes"] });
+      logActivity({
+        activityType: 'updated',
+        resumeTitle: data.title,
+        resumeId: data.id,
+      });
       toast({
         title: "Resume Updated",
         description: "Your resume has been updated successfully.",
@@ -112,12 +124,27 @@ export const useResumes = () => {
 
   const deleteResume = useMutation({
     mutationFn: async (id: string) => {
+      // Get resume title before deleting
+      const { data: resume } = await supabase
+        .from("resumes")
+        .select("title")
+        .eq("id", id)
+        .single();
+
       const { error } = await supabase.from("resumes").delete().eq("id", id);
 
       if (error) throw error;
+      return resume;
     },
-    onSuccess: () => {
+    onSuccess: (resume) => {
       queryClient.invalidateQueries({ queryKey: ["resumes"] });
+      if (resume?.title) {
+        logActivity({
+          activityType: 'deleted',
+          resumeTitle: resume.title,
+          resumeId: null,
+        });
+      }
       toast({
         title: "Resume Deleted",
         description: "Your resume has been deleted successfully.",
@@ -159,8 +186,13 @@ export const useResumes = () => {
       if (createError) throw createError;
       return newResume;
     },
-    onSuccess: () => {
+    onSuccess: (newResume) => {
       queryClient.invalidateQueries({ queryKey: ["resumes"] });
+      logActivity({
+        activityType: 'duplicated',
+        resumeTitle: newResume.title,
+        resumeId: newResume.id,
+      });
       toast({
         title: "Resume Duplicated",
         description: "Your resume has been duplicated successfully.",

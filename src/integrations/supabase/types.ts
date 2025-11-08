@@ -14,6 +14,41 @@ export type Database = {
   }
   public: {
     Tables: {
+      activities: {
+        Row: {
+          activity_type: string
+          created_at: string
+          id: string
+          resume_id: string | null
+          resume_title: string
+          user_id: string
+        }
+        Insert: {
+          activity_type: string
+          created_at?: string
+          id?: string
+          resume_id?: string | null
+          resume_title: string
+          user_id: string
+        }
+        Update: {
+          activity_type?: string
+          created_at?: string
+          id?: string
+          resume_id?: string | null
+          resume_title?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "activities_resume_id_fkey"
+            columns: ["resume_id"]
+            isOneToOne: false
+            referencedRelation: "resumes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       certifications: {
         Row: {
           certificate_url: string | null

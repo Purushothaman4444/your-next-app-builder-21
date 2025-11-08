@@ -17,6 +17,7 @@ import { TEMPLATES, getTemplateById } from "@/constants/templates";
 import { getTemplateStyles } from "@/utils/templateStyles";
 import { useResumes } from "@/hooks/useResumes";
 import { supabase } from "@/integrations/supabase/client";
+import { useActivities } from "@/hooks/useActivities";
 
 const ResumePreview = () => {
   const navigate = useNavigate();
@@ -24,6 +25,7 @@ const ResumePreview = () => {
   const [searchParams] = useSearchParams();
   const resumeId = searchParams.get("resumeId");
   const { resumes } = useResumes();
+  const { logActivity } = useActivities();
   const currentResume = resumes?.find(r => r.id === resumeId);
   const [selectedTemplate, setSelectedTemplate] = useState(currentResume?.template_id || "professional-classic");
   const [customColor, setCustomColor] = useState(currentResume?.custom_styles?.color || "#1E40AF");
@@ -125,6 +127,15 @@ const ResumePreview = () => {
     };
 
     downloadResumeAsPDF(resumeData, selectedTemplate);
+    
+    // Log the download activity
+    if (currentResume) {
+      logActivity({
+        activityType: 'downloaded',
+        resumeTitle: currentResume.title,
+        resumeId: currentResume.id,
+      });
+    }
   };
 
   if (!resumeId) {
