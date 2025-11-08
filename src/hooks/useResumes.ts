@@ -11,6 +11,10 @@ export interface Resume {
   created_at: string;
   updated_at: string;
   last_accessed_at: string;
+  custom_styles?: {
+    color?: string;
+    font?: string;
+  };
 }
 
 interface CreateResumeParams {

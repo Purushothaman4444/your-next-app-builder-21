@@ -172,7 +172,7 @@ export const getTemplatePDFStyles = (templateId: string): string => {
   // Modern Templates
   if (templateId.startsWith('modern')) {
     return `
-      .header { background: linear-gradient(135deg, #9333EA 0%, #4F46E5 100%); color: white; padding: 20pt; margin: -0.5in -0.5in 16pt -0.5in; }
+      .header { background: linear-gradient(135deg, #9333EA 0%, #4F46E5 100%); color: white; padding: 20pt; margin: 0 0 16pt 0; border-radius: 8pt; }
       .header h1 { font-size: 28pt; font-weight: bold; margin-bottom: 8pt; }
       .section-title { font-size: 16pt; font-weight: bold; color: #9333EA; margin-bottom: 10pt; }
       .entry { border-left: 3pt solid #9333EA; padding-left: 8pt; margin-bottom: 10pt; }
@@ -204,7 +204,7 @@ export const getTemplatePDFStyles = (templateId: string): string => {
   // Executive Templates
   if (templateId.startsWith('executive')) {
     return `
-      .header { border-bottom: 3pt solid #92400E; padding-bottom: 12pt; margin-bottom: 16pt; background: #FFFBEB; padding: 16pt; margin: -0.5in -0.5in 16pt -0.5in; }
+      .header { border-bottom: 3pt solid #92400E; padding: 16pt; margin: 0 0 16pt 0; background: #FFFBEB; border-radius: 8pt; }
       .header h1 { font-size: 24pt; font-family: Georgia, serif; font-weight: bold; color: #1E293B; margin-bottom: 8pt; letter-spacing: 1pt; }
       .section-title { font-size: 14pt; font-family: Georgia, serif; font-weight: bold; color: #92400E; text-transform: uppercase; letter-spacing: 2pt; border-bottom: 2pt solid #FCD34D; padding-bottom: 4pt; margin-bottom: 10pt; }
       .skill-item { background: #FEF3C7; color: #92400E; border: 1pt solid #FCD34D; padding: 6pt 12pt; border-radius: 4pt; display: inline-block; margin: 3pt; font-weight: 600; }

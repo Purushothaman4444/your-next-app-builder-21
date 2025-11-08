@@ -61,7 +61,7 @@ export const generatePDFHtml = (data: ResumeData, template: string = "profession
         <style>
           @page {
             size: A4;
-            margin: 0.5in;
+            margin: 0.75in 0.5in 0.5in 0.5in;
           }
           
           * {
@@ -77,6 +77,7 @@ export const generatePDFHtml = (data: ResumeData, template: string = "profession
             color: #333;
             max-width: 8.5in;
             margin: 0 auto;
+            padding: 12pt 0;
           }
           
           .contact-info {
