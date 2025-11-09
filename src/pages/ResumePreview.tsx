@@ -195,6 +195,10 @@ const ResumePreview = () => {
                     <Download className="h-4 w-4 mr-2" />
                     Download PDF
                   </Button>
+                  <Button variant="outline" className="w-full" onClick={() => navigate(`/resume/export?resumeId=${resumeId}`)}>
+                    <Share2 className="h-4 w-4 mr-2" />
+                    Export & Share
+                  </Button>
                 </div>
               </CardContent>
             </Card>
