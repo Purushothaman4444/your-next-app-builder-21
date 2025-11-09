@@ -152,6 +152,36 @@ export type Database = {
           },
         ]
       }
+      export_history: {
+        Row: {
+          created_at: string
+          export_format: string
+          file_name: string
+          id: string
+          resume_id: string
+          resume_title: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          export_format: string
+          file_name: string
+          id?: string
+          resume_id: string
+          resume_title: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          export_format?: string
+          file_name?: string
+          id?: string
+          resume_id?: string
+          resume_title?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       file_uploads: {
         Row: {
           created_at: string

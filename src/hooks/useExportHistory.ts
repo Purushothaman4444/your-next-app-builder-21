@@ -1,16 +1,9 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "./use-toast";
+import type { Database } from "@/integrations/supabase/types";
 
-export interface ExportHistory {
-  id: string;
-  user_id: string;
-  resume_id: string;
-  resume_title: string;
-  export_format: string;
-  file_name: string;
-  created_at: string;
-}
+type ExportHistory = Database['public']['Tables']['export_history']['Row'];
 
 export const useExportHistory = (resumeId?: string) => {
   const { toast } = useToast();
@@ -32,7 +25,7 @@ export const useExportHistory = (resumeId?: string) => {
       const { data, error } = await query;
 
       if (error) throw error;
-      return data as ExportHistory[];
+      return data;
     },
   });
 

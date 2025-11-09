@@ -121,10 +121,7 @@ export const generateResumeDocx = async (data: ResumeData): Promise<Blob> => {
           spacing: { before: 100 },
         }),
         new Paragraph({
-          children: [
-            new TextRun({ text: exp.company, italics: true }),
-            exp.location ? new TextRun({ text: ` - ${exp.location}` }) : new TextRun({ text: "" }),
-          ],
+          text: exp.company + (exp.location ? ` - ${exp.location}` : ''),
         }),
         new Paragraph({
           text: `${exp.startDate ? new Date(exp.startDate).toLocaleDateString('en-US', { month: 'short', year: 'numeric' }) : ''} - ${exp.isCurrent ? 'Present' : exp.endDate ? new Date(exp.endDate).toLocaleDateString('en-US', { month: 'short', year: 'numeric' }) : ''}`,
@@ -163,7 +160,6 @@ export const generateResumeDocx = async (data: ResumeData): Promise<Blob> => {
         }),
         new Paragraph({
           text: edu.school,
-          italics: true,
         }),
         new Paragraph({
           text: edu.graduationDate ? new Date(edu.graduationDate).toLocaleDateString('en-US', { month: 'short', year: 'numeric' }) : '',
